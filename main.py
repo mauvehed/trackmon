@@ -2,66 +2,50 @@ import json
 import requests
 
 class Trackerstatus:
-    '''
-        "ptp": {
-        "Description": "two services unstable and three of six services offline",
-        "Details": {
-            "IRCServer": "0",
-            "IRCTorrentAnnouncer": "0",
-            "IRCUserIdentifier": "0",
-            "TrackerHTTP": "2",
-            "TrackerHTTPS": "2",
-            "Website": "1"
-        },
-        "Services": {
-            "offline": 3,
-            "online": 1,
-            "unstable": 2
-        },
-        "Status": "unstable",
-        "URL": "https://ptp.trackerstatus.info",
-        "tweet": {
-            "date": "17th of June 2018",
-            "message": "The website as of many hours ago is online and working correctly.",
-            "unix": "1529298117"
-        }
-    },
-    '''
     def __init__(self, site):
-        self.api_list = 'https://trackerstatus.info/api/list/'
         self.site = site
-#        self.data = {}
+        self.api_list = 'https://{site}.trackerstatus.info/api/all/'.format(site=self.site)
+        self.data = self.data = requests.get(self.api_list,timeout=15).json()
 
-    def get_api(self):
-        self.data = requests.get(self.api_list,timeout=15).json()
-        return self.data
+#    def get_api(self):
+#        self.data = requests.get(self.api_list,timeout=15).json()
+#        return self.data
 
-    def status_check_web(self, data):
-        if data[self.site]['Details']['Website'] == '1':
-            return 'online'
-        elif data[self.site]['Details']['Website'] == '2':
-            return 'unstable'
-        elif data[self.site]['Details']['Website'] == '0':
-            return 'offline'
+    def status_check_web(self):
+        if self.data['Website']['Status'] == '0':
+            time = self.data['Website']['CurrentDowntime']
+            output = f"The Website has been offline for {time} minutes"
+        elif self.data['Website']['Status'] == '1':
+            time = self.data['Website']['CurrentUptime']
+            latency = self.data['Website']['Latency']
+            output = f"The Website has been online for {time} hours with a latency of {latency}"
+        elif self.data['Website']['Status'] == '2':
+            time = self.data['Website']['CurrentUptime']
+            output = f"The HTTPS Tracker has currently been in an unstable state for {time} minutes"
+        return output
 
-    def status_check_tracker(self, data):
-        if data[self.site]['Details']['TrackerHTTPS'] == '1':
-            return 'online'
-        elif data[self.site]['Details']['TrackerHTTPS'] == '2':
-            return 'unstable'
-        elif data[self.site]['Details']['TrackerHTTPS'] == '0':
-            return 'offline'
-
+    def status_check_tracker(self):
+        if self.data['TrackerHTTPS']['Status'] == '0':
+            status = 'offline'
+            time = self.data['TrackerHTTPS']['CurrentDowntime']
+        elif self.data['TrackerHTTPS']['Status'] == '1':
+            status = 'online'
+            time = self.data['TrackerHTTPS']['CurrentUptime']
+        elif self.data['TrackerHTTPS']['Status'] == '2':
+            time = self.data['TrackerHTTPS']['CurrentUptime']
+            output = f"The HTTPS Tracker has currently been in an unstable state for {time} minutes"
+        return output
+    
 def main():
     ptp = Trackerstatus('ptp')
-    data = ptp.get_api()
-    status_web = ptp.status_check_web(data)
-    print(f'Website status: {status_web}')
-    status_tracker = ptp.status_check_tracker(data)
-    print(f'Tracker status: {status_tracker}')
+#    data = ptp.get_api()
+    status_web = ptp.status_check_web()
+    print(status_web)
+    status_tracker = ptp.status_check_tracker()
+    print(status_tracker)
 
-# Uncomment to pretty print data['ptp']
-#    print(json.dumps(data['ptp'], indent=4, sort_keys=True))
+# Uncomment to pretty print data
+#    print(json.dumps(ptp.data, indent=4, sort_keys=True))
 
 # run main() if this file is called directly
 if __name__ == '__main__':
