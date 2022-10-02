@@ -38,7 +38,6 @@ class Trackerstatus:
     
 def main():
     ptp = Trackerstatus('ptp')
-#    data = ptp.get_api()
     status_web = ptp.status_check_web()
     print(status_web)
     status_tracker = ptp.status_check_tracker()
