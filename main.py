@@ -1,36 +1,37 @@
 import json
 import requests
 
-'''print(json.dumps(data, indent=4, sort_keys=True))'''
-'''print(data['TrackerHTTPS'])'''
-'''print(json.dumps(data['TrackerHTTPS'], indent=4, sort_keys=True))'''
-'''print(data['TrackerHTTPS']['Status'])'''
+class Trackerstatus:
+    def __init__(self,latency,uptime,downtime):
+        self.api_list = {
+            'latency': latency,
+            'uptime': uptime,
+            'downtime': downtime,
+        }
+        self.data = {}
+
+    def get_api(self):
+        for key, value in self.api_list.items():
+            self.data[key] = requests.get(value,timeout=15).json()
+        return self.data
+
+    def status_check(self, data):
+        if data['TrackerHTTPS']['Status'] == '0':
+            return 'down'
+        elif data['TrackerHTTPS']['Status'] == '1':
+            return 'up'
+
+    def get_uptime(self, data):
+        return int(data['TrackerHTTPS']['Uptime'])
+
+    def current_downtime(self, data):
+        return int(data['TrackerHTTPS']['CurrentDowntime'])
 
 def main():
-    '''main function'''
-    api_list = 'https://ptp.trackerstatus.info/api/all/'
+    ptp = Trackerstatus('https://ptp.trackerstatus.info/api/latency/', 'https://ptp.trackerstatus.info/api/uptime/', 'https://ptp.trackerstatus.info/api/downtime/')
+    data = ptp.get_api()
+    print(json.dumps(data, indent=4, sort_keys=True))
 
-    data = get_api(api_list)
-
-    if status_check(data) == 'down':
-        downtime = current_downtime(data)
-        print('PTP has been down for ' + str(downtime // 60) + ' hours')
-
-def status_check(data):
-    '''function to check status of tracker'''
-    if data['TrackerHTTPS']['Status'] == '0':
-        return 'down'
-    elif data['TrackerHTTPS']['Status'] == '1':
-        return 'up'
-
-def current_downtime(data):
-    '''function to check current downtime'''
-    return int(data['TrackerHTTPS']['CurrentDowntime'])
-
-def get_api(api_list):
-    '''function to get api data'''
-    response = requests.get(api_list)
-    return json.loads(response.text)
-
+# run main() if this file is called directly
 if __name__ == '__main__':
     main()
